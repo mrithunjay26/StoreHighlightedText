@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <!-- The CSS package above applies Google styling to buttons and other elements. -->
+
+  <style>
+    .branding-below {
+      bottom: 56px;
+      top: 0;
+    }
+    .branding-text {
+      left: 7px;
+      position: relative;
+      top: 3px;
+    }
+    .col-contain {
+      overflow: hidden;
+    }
+    .col-one {
+      float: left;
+      width: 50%;
+    }
+    .logo {
+      vertical-align: middle;
+    }
+    .radio-spacer {
+      height: 20px;
+    }
+    .width-100 {
+      width: 100%;
+    }
+  </style>
+  <title></title>
+</head>
+<body>
+<div class="sidebar branding-below">
+  <form>
+    <div class="block form-group">
+      <label for="selected-text"><b>Selected Text</b></label>
+      <textarea class="width-100" id="selected-text" rows="10"></textarea>
+    </div>
+    <div class="block">
+      <button class="blue" id="get-text">Get Text</button>
+      <button id="store-text">Store</button>
+    </div>
+    <div class="block form-group">
+      <label for="stored-text"><b>Stored Text</b></label>
+      <textarea class="width-100" id="stored-text" rows="10" disabled></textarea>
+    </div>
+    <div class="block form-group">
+      <label for="delete-text"><b>Delete Text</b></label>
+      <input class="width-100" type="number" id="delete-text-index" placeholder="Enter the index of the text to delete">
+      <button id="delete-text">Delete</button>
+    </div>
+  </form>
+</div>
+
+<div class="sidebar bottom">
+  <img alt="Add-on logo" class="logo" src="https://www.gstatic.com/images/branding/product/1x/translate_48dp.png" width="27" height="27">
+  <span class="gray branding-text">Translate sample by Google</span>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+  /**
+   * On document load, assign click handlers to each button and try to load the
+   * stored text from the server.
+   */
+  $(function() {
+    $('#get-text').click(getText);
+    $('#store-text').click(storeText);
+    $('#delete-text').click(deleteText);
+
+    google.script.run.withSuccessHandler(loadStoredText).getStoredText();
+  });
+
+  /**
+   * Callback function that populates the stored text textarea with the text
+   * stored on the server.
+   *
+   * @param {string} storedText The stored text.
+   */
+  function loadStoredText(storedText) {
+    $('#stored-text').val(storedText);
+  }
+
+  /**
+   * Runs a server-side function to get the selected text and update the sidebar
+   * UI with the resulting text.
+   */
+  function getText() {
+    this.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(text, element) {
+        $('#selected-text').val(text);
+        element.disabled = false;
+      })
+      .withFailureHandler(function(msg, element) {
+        showError(msg, $('#button-bar'));
+        element.disabled = false;
+      })
+      .withUserObject(this)
+      .getSelectedText();
+  }
+
+  /**
+   * Runs a server-side function to store the selected text on the server.
+   */
+  function storeText() {
+    this.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(returnSuccess, element) {
+        element.disabled = false;
+        google.script.run.withSuccessHandler(loadStoredText).getStoredText();
+      })
+      .withFailureHandler(function(msg, element) {
+        showError(msg, $('#button-bar'));
+        element.disabled = false;
+      })
+      .withUserObject(this)
+      .storeText($('#selected-text').val());
+  }
+
+  /**
+   * Runs a server-side function to delete a specific piece of stored text.
+   */
+  function deleteText() {
+    this.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(returnSuccess, element) {
+        element.disabled = false;
+        google.script.run.withSuccessHandler(loadStoredText).getStoredText();
+      })
+      .withFailureHandler(function(msg, element) {
+        showError(msg, $('#button-bar'));
+        element.disabled = false;
+      })
+      .withUserObject(this)
+      .deleteText(parseInt($('#delete-text-index').val()));
+  }
+
+  /**
+   * Inserts a div that contains an error message after a given element.
+   *
+   * @param {string} msg The error message to display.
+   * @param {DOMElement} element The element after which to display the error.
+   */
+  function showError(msg, element) {
+    const div = $('<div id="error" class="error">' + msg + '</div>');
+    $(element).after(div);
+  }
+</script>
+</body>
+</html>
